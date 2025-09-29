@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -9,14 +9,20 @@ import {
   AlertCircle,
   Clock,
   BarChart3,
-  Target
+  Target,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import SpiderChart from '../Charts/SpiderChart';
+import { generateStudentRecommendations } from '../../services/aiService';
 
 export default function StudentDetailModal({ isOpen, onClose, studentData, studentName }) {
   if (!isOpen || !studentData || !studentName) return null;
 
   const [activeTab, setActiveTab] = useState('chart');
+  const [aiRecommendations, setAiRecommendations] = useState('');
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   const getScoreLevel = (score) => {
     if (score >= 4) return { level: 'Sangat Baik', color: 'text-green-600 bg-green-100' };
@@ -70,6 +76,28 @@ export default function StudentDetailModal({ isOpen, onClose, studentData, stude
   const skillAverages = calculateSkillAverages(studentData);
   const overallAverage = Object.values(skillAverages).reduce((sum, avg) => sum + avg, 0) / Object.keys(skillAverages).length;
   const overallLevel = getScoreLevel(overallAverage);
+
+  // Generate AI recommendations when modal opens
+  useEffect(() => {
+    if (isOpen && studentName && studentData && !aiRecommendations && !loadingAI) {
+      generateAIRecommendations();
+    }
+  }, [isOpen, studentName, studentData]);
+
+  const generateAIRecommendations = async () => {
+    setLoadingAI(true);
+    setAiError(null);
+    
+    try {
+      const recommendations = await generateStudentRecommendations(studentName, skillAverages, studentData);
+      setAiRecommendations(recommendations);
+    } catch (error) {
+      console.error('Error generating AI recommendations:', error);
+      setAiError('Gagal memuat rekomendasi AI. Silakan coba lagi.');
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const formatQuestion = (question) => {
     return question.split('|')[0]?.trim() || question;
@@ -167,6 +195,17 @@ export default function StudentDetailModal({ isOpen, onClose, studentData, stude
                     <BookOpen className="h-4 w-4 inline mr-2" />
                     Detailed Answers
                   </button>
+                  <button
+                    onClick={() => setActiveTab('ai')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'ai'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Sparkles className="h-4 w-4 inline mr-2" />
+                    AI Recommendations
+                  </button>
                 </nav>
               </div>
 
@@ -251,6 +290,89 @@ export default function StudentDetailModal({ isOpen, onClose, studentData, stude
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {activeTab === 'ai' && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Sparkles className="h-5 w-5 text-purple-600" />
+                        <h3 className="font-semibold text-purple-900">AI-Powered Recommendations</h3>
+                      </div>
+                      <p className="text-purple-800 text-sm">
+                        Rekomendasi personal untuk {studentName} berdasarkan analisis kemampuan soft skills
+                      </p>
+                    </div>
+
+                    {loadingAI ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                          <Loader2 className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-4" />
+                          <p className="text-gray-600">Menganalisis data dan menghasilkan rekomendasi...</p>
+                          <p className="text-sm text-gray-500 mt-2">Ini mungkin memakan waktu beberapa detik</p>
+                        </div>
+                      </div>
+                    ) : aiError ? (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-red-900 mb-2">Gagal Memuat Rekomendasi</h3>
+                        <p className="text-red-700 mb-4">{aiError}</p>
+                        <button
+                          onClick={generateAIRecommendations}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          Coba Lagi
+                        </button>
+                      </div>
+                    ) : aiRecommendations ? (
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="prose prose-sm max-w-none">
+                          {aiRecommendations.split('\n').map((paragraph, index) => {
+                            if (paragraph.trim() === '') return null;
+                            
+                            // Check if it's a heading (starts with number and bold text)
+                            if (paragraph.match(/^\d+\.\s*\*\*.*\*\*/)) {
+                              const cleanText = paragraph.replace(/^\d+\.\s*\*\*(.*)\*\*/, '$1');
+                              return (
+                                <h4 key={index} className="text-lg font-semibold text-gray-900 mt-6 mb-3 first:mt-0">
+                                  {cleanText}
+                                </h4>
+                              );
+                            }
+                            
+                            // Check if it's a subheading (starts with **)
+                            if (paragraph.match(/^\*\*.*\*\*/)) {
+                              const cleanText = paragraph.replace(/\*\*(.*)\*\*/, '$1');
+                              return (
+                                <h5 key={index} className="text-md font-semibold text-gray-800 mt-4 mb-2">
+                                  {cleanText}
+                                </h5>
+                              );
+                            }
+                            
+                            // Regular paragraph
+                            return (
+                              <p key={index} className="text-gray-700 leading-relaxed mb-3">
+                                {paragraph}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Rekomendasi AI</h3>
+                        <p className="text-gray-500">Klik tombol di bawah untuk memuat rekomendasi AI</p>
+                        <button
+                          onClick={generateAIRecommendations}
+                          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Generate Recommendations
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
