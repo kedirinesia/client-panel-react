@@ -10,16 +10,20 @@ import {
   School,
   Clock,
   FileText,
-  BarChart3
+  BarChart3,
+  Download,
+  Loader2
 } from 'lucide-react';
 import BarChart from '../Charts/BarChart';
 import StudentDetailModal from './StudentDetailModal';
+import { downloadClassPDF } from '../../services/pdfService';
 
 export default function ClassDetailModal({ isOpen, onClose, classData }) {
   if (!isOpen || !classData) return null;
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
@@ -94,6 +98,18 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
     setSelectedStudent(null);
   };
 
+  const handleDownloadPDF = async () => {
+    setDownloadingPDF(true);
+    try {
+      await downloadClassPDF(classData);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Gagal mengunduh PDF. Silakan coba lagi.');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
   const skillCategories = getSkillCategories();
   const averageScore = calculateAverageScore(classData.studentScores);
 
@@ -132,12 +148,26 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
                       <p className="text-sm text-gray-600">{classData.schoolName}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={downloadingPDF}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {downloadingPDF ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      <span>{downloadingPDF ? 'Mengunduh...' : 'Download PDF'}</span>
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
 

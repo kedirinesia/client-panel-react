@@ -42,3 +42,4 @@ const SpiderChart = ({ data, maxValue = 4 }) => {
 };
 
 export default SpiderChart;
+

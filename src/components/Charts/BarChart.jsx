@@ -57,3 +57,4 @@ const BarChart = ({ data, maxValue = 4 }) => {
 };
 
 export default BarChart;
+
