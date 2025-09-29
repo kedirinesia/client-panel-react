@@ -17,6 +17,7 @@ import {
 import BarChart from '../Charts/BarChart';
 import StudentDetailModal from './StudentDetailModal';
 import { downloadClassPDF } from '../../services/pdfService';
+import { downloadClassExcel } from '../../services/excelService';
 
 export default function ClassDetailModal({ isOpen, onClose, classData }) {
   if (!isOpen || !classData) return null;
@@ -24,6 +25,7 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
@@ -110,6 +112,18 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
     }
   };
 
+  const handleDownloadExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      await downloadClassExcel(classData);
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      alert('Gagal mengunduh Excel. Silakan coba lagi.');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
   const skillCategories = getSkillCategories();
   const averageScore = calculateAverageScore(classData.studentScores);
 
@@ -152,7 +166,7 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
                     <button
                       onClick={handleDownloadPDF}
                       disabled={downloadingPDF}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {downloadingPDF ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -160,6 +174,18 @@ export default function ClassDetailModal({ isOpen, onClose, classData }) {
                         <Download className="h-4 w-4" />
                       )}
                       <span>{downloadingPDF ? 'Mengunduh...' : 'Download PDF'}</span>
+                    </button>
+                    <button
+                      onClick={handleDownloadExcel}
+                      disabled={downloadingExcel}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {downloadingExcel ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="h-4 w-4" />
+                      )}
+                      <span>{downloadingExcel ? 'Mengunduh...' : 'Download Excel'}</span>
                     </button>
                     <button
                       onClick={onClose}
