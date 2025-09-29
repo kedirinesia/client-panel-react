@@ -233,6 +233,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**Admin Panel Vossa4Tefa** - Modern, Fast, dan Powerful! 🚀
+**Client Panel Vossa4Tefa** - Modern, Fast, dan Powerful! 🚀
 
 Built with ❤️ using React, Tailwind CSS, dan Firebase

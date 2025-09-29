@@ -105,7 +105,7 @@ export default function Login() {
             <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogIn className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Client Panel</h1>
             <p className="text-gray-600 mt-2">Sign in to your account</p>
           </div>
 
@@ -196,7 +196,7 @@ export default function Login() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            © 2024 Admin Panel. All rights reserved.
+            © 2024 Client Panel. All rights reserved.
           </p>
         </div>
       </motion.div>
