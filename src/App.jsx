@@ -4,9 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { 
   Users, 
-  Database, 
   BarChart3, 
-  Activity,
   TrendingUp,
   UserCheck,
   Clock
@@ -16,7 +14,7 @@ import {
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import StatsCard from './components/Dashboard/StatsCard';
-import RecentUsers from './components/Dashboard/RecentUsers';
+import MyStudents from './components/Dashboard/MyStudents';
 import UsersTable from './components/Users/UsersTable';
 import SchoolsTable from './components/Schools/SchoolsTable';
 import MonitoringDashboard from './components/Monitoring/MonitoringDashboard';
@@ -132,11 +130,10 @@ function AppContent() {
   };
 
   // Calculate stats
+  const totalStudents = userClasses.reduce((total, classData) => total + (classData.studentCount || 0), 0);
   const stats = {
-    totalUsers: userCount, // Total users dari Firebase Authentication
-    activeUsers: users.filter(user => user.status === 'active').length,
-    recentActivity: Math.floor(Math.random() * 50) + 10,
-    dataRecords: assessmentReports.length // Jumlah sekolah yang sudah memasukkan data
+    totalUsers: totalStudents, // Total students dari kelas yang diampu
+    activeUsers: userClasses.length // Jumlah kelas yang diampu
   };
 
   // Render current section
@@ -146,7 +143,7 @@ function AppContent() {
         return (
           <div className="space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <StatsCard
                 title="My Students"
                 value={stats.totalUsers}
@@ -157,31 +154,13 @@ function AppContent() {
                 delay={0}
               />
               <StatsCard
-                title="Active Students"
+                title="My Classes"
                 value={stats.activeUsers}
-                change="8"
+                change="2"
                 changeType="increase"
                 icon={UserCheck}
                 color="green"
                 delay={0.1}
-              />
-              <StatsCard
-                title="Reports Generated"
-                value={stats.dataRecords}
-                change="23"
-                changeType="increase"
-                icon={Database}
-                color="purple"
-                delay={0.2}
-              />
-              <StatsCard
-                title="Recent Activity"
-                value={stats.recentActivity}
-                change="5"
-                changeType="increase"
-                icon={Activity}
-                color="yellow"
-                delay={0.3}
               />
             </div>
 
@@ -202,7 +181,7 @@ function AppContent() {
                     </div>
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                        <Database className="h-4 w-4 text-green-600" />
+                        <BarChart3 className="h-4 w-4 text-green-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">Assessment report generated</p>
@@ -211,7 +190,7 @@ function AppContent() {
                     </div>
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Activity className="h-4 w-4 text-purple-600" />
+                        <Clock className="h-4 w-4 text-purple-600" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">System backup completed</p>
@@ -223,6 +202,11 @@ function AppContent() {
               </div>
               
               <div className="space-y-6">
+                <MyStudents 
+                  userClasses={userClasses}
+                  onClassClick={handleClassClick}
+                />
+                
                 <div className="card p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">School Status</h3>
                   <div className="space-y-4">
