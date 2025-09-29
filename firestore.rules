@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to stats collection
+    match /stats/{document} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write access to users collection
+    match /users/{document} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write access to assessment_reports collection
+    match /assessment_reports/{document} {
+      allow read, write: if true;
+    }
+  }
+}
