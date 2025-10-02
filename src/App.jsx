@@ -391,24 +391,26 @@ function AppContent() {
           setIsOpen={setSidebarOpen}
         />
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="main-content-responsive">
           <Header
             onMenuClick={() => setSidebarOpen(true)}
             currentSection={currentSection}
           />
 
-          <main className="flex-1 overflow-y-auto p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSection}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                {renderSection()}
-              </motion.div>
-            </AnimatePresence>
+          <main className="flex-1 overflow-y-auto content-padding-responsive">
+            <div className="container-responsive">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentSection}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderSection()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </main>
         </div>
 

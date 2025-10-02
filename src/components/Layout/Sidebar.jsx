@@ -26,8 +26,6 @@ const navigation = [
 ];
 
 export default function Sidebar({ currentSection, setCurrentSection, isOpen, setIsOpen }) {
-  const isDesktop = window.innerWidth >= 1024;
-  
   return (
     <>
       {/* Mobile backdrop */}
@@ -46,29 +44,31 @@ export default function Sidebar({ currentSection, setCurrentSection, isOpen, set
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ x: isDesktop ? 0 : (isOpen ? 0 : '-100%') }}
+        animate={{
+          x: isOpen ? 0 : '-100%'
+        }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl lg:translate-x-0 lg:relative lg:inset-0 lg:block lg:flex-shrink-0 sidebar-desktop"
+        className={`sidebar-mobile ${!isOpen ? 'closed' : ''}`}
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600">
-                <Shield className="h-5 w-5 text-white" />
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6 border-b border-gray-200">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+              <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-primary-600">
+                <Shield className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
-              <span className="text-lg font-semibold text-gray-900">Client Portal</span>
+              <span className="text-sm sm:text-lg font-semibold text-gray-900 truncate">Client Portal</span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2">
             {navigation.map((item) => {
               const isActive = currentSection === item.href;
               return (
@@ -78,7 +78,7 @@ export default function Sidebar({ currentSection, setCurrentSection, isOpen, set
                     setCurrentSection(item.href);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                  className={`w-full flex items-center px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
                     isActive
                       ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -86,21 +86,21 @@ export default function Sidebar({ currentSection, setCurrentSection, isOpen, set
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-600' : 'text-gray-400'}`} />
-                  {item.name}
+                  <item.icon className={`mr-2 sm:mr-3 h-3 w-3 sm:h-5 sm:w-5 ${isActive ? 'text-primary-600' : 'text-gray-400'}`} />
+                  <span className="truncate">{item.name}</span>
                 </motion.button>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary-600">A</span>
+          <div className="border-t border-gray-200 p-3 sm:p-4">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs sm:text-sm font-medium text-primary-600">A</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">Client User</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Client User</p>
                 <p className="text-xs text-gray-500 truncate">client@vossa4tefa.com</p>
               </div>
             </div>
