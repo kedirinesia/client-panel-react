@@ -234,70 +234,93 @@ const getScoreLevel = (score) => {
 };
 
 // Function to get student skill data for spider chart
+const SCORE_LABEL_MAP = {
+  'sangat baik': 4,
+  'baik': 3,
+  'cukup': 2,
+  'kurang': 1
+};
+
+const normalizeAnswerToScore = (answer) => {
+  if (answer === null || answer === undefined) return null;
+
+  if (typeof answer === 'number') {
+    return Number.isNaN(answer) ? null : answer;
+  }
+
+  if (typeof answer === 'string') {
+    const trimmed = answer.trim();
+    if (!trimmed) return null;
+
+    const mapped = SCORE_LABEL_MAP[trimmed.toLowerCase()];
+    if (mapped !== undefined) {
+      return mapped;
+    }
+
+    const numberMatch = trimmed.match(/(-?\d+(?:\.\d+)?)/);
+    if (numberMatch) {
+      const parsed = parseFloat(numberMatch[1]);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
+  }
+
+  if (typeof answer === 'object') {
+    const numericKeys = ['score', 'value', 'rating'];
+    for (const key of numericKeys) {
+      if (typeof answer[key] === 'number' && !Number.isNaN(answer[key])) {
+        return answer[key];
+      }
+    }
+
+    const labelKeys = ['scoreLabel', 'label', 'text'];
+    for (const key of labelKeys) {
+      if (typeof answer[key] === 'string') {
+        const mapped = normalizeAnswerToScore(answer[key]);
+        if (mapped !== null) {
+          return mapped;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
 const getStudentSkillData = (answers) => {
   const skillCategories = {};
   
-  console.log('Processing answers for spider chart:', answers);
-  
   Object.entries(answers).forEach(([question, answer]) => {
-    console.log('Processing question:', question, 'Answer:', answer);
-    
     // Extract skill category from question format: "Question text | Skill (Category)"
     const parts = question.split('|');
     if (parts.length >= 2) {
       const skillPart = parts[1].trim();
-      console.log('Skill part:', skillPart);
       
-      // Try different patterns to extract category
       let category = 'Other';
-      
-      // Pattern 1: "Skill (Category)"
       const categoryMatch = skillPart.match(/\(([^)]+)\)/);
       if (categoryMatch) {
         category = categoryMatch[1];
       } else {
-        // Pattern 2: Just the skill name
         category = skillPart;
       }
-      
-      console.log('Extracted category:', category);
       
       if (!skillCategories[category]) {
         skillCategories[category] = [];
       }
       
-      // Convert answer to number if possible
-      let numericAnswer = 0;
-      if (typeof answer === 'number') {
-        numericAnswer = answer;
-      } else if (typeof answer === 'string') {
-        // Try to parse string numbers
-        const parsed = parseFloat(answer);
-        if (!isNaN(parsed)) {
-          numericAnswer = parsed;
-        } else {
-          // Try to extract number from string
-          const numberMatch = answer.match(/(\d+(?:\.\d+)?)/);
-          if (numberMatch) {
-            numericAnswer = parseFloat(numberMatch[1]);
-          }
-        }
+      const numericAnswer = normalizeAnswerToScore(answer);
+      if (numericAnswer !== null) {
+        skillCategories[category].push(numericAnswer);
       }
-      
-      console.log('Numeric answer:', numericAnswer);
-      skillCategories[category].push(numericAnswer);
     }
   });
 
-  console.log('Skill categories:', skillCategories);
-
   // Calculate averages and ensure we have meaningful data
   const result = Object.entries(skillCategories).map(([name, values]) => {
-    const validValues = values.filter(v => typeof v === 'number' && !isNaN(v) && v > 0);
+    const validValues = values.filter(v => typeof v === 'number' && !Number.isNaN(v));
     const average = validValues.length > 0 ? 
       (validValues.reduce((sum, val) => sum + val, 0) / validValues.length) : 0;
-    
-    console.log(`Skill: ${name}, Values: ${validValues}, Average: ${average}`);
     
     return {
       skill: name,
@@ -305,45 +328,20 @@ const getStudentSkillData = (answers) => {
     };
   });
 
-  console.log('Final result:', result);
-
-  // If no valid data, create sample data for demonstration
-  if (result.length === 0 || result.every(r => r.value === 0)) {
-    console.log('No valid data found, using sample data');
-    return [
-      { skill: 'Kerja Sama', value: 2.5 },
-      { skill: 'Tanggung Jawab', value: 2.0 },
-      { skill: 'Komunikasi', value: 1.5 },
-      { skill: 'Problem Solving', value: 2.0 },
-      { skill: 'Kepemimpinan', value: 2.5 },
-      { skill: 'Fleksibilitas', value: 2.0 }
-    ];
-  }
-
-  // Ensure we have at least 6 skills for a proper spider chart
   const requiredSkills = [
     'Kerja Sama', 'Tanggung Jawab', 'Komunikasi', 
     'Problem Solving', 'Kepemimpinan', 'Fleksibilitas'
   ];
   
-  const finalResult = [];
-  requiredSkills.forEach(skill => {
+  const finalResult = requiredSkills.map(skill => {
     const existing = result.find(r => r.skill === skill);
-    if (existing) {
-      finalResult.push(existing);
-    } else {
-      // Add missing skill with a reasonable default value
-      finalResult.push({ skill, value: 2.0 });
-    }
+    const value = existing ? existing.value : 0;
+    const clampedValue = Math.max(0, Math.min(4, value));
+    return { skill, value: clampedValue };
   });
 
-  // Ensure all values are between 1 and 4 for better chart appearance
-  finalResult.forEach(item => {
-    if (item.value < 1) item.value = 1;
-    if (item.value > 4) item.value = 4;
-  });
-
-  return finalResult;
+  const hasData = finalResult.some(item => item.value > 0);
+  return hasData ? finalResult : [];
 };
 
 // Function to add simple chart to PDF
