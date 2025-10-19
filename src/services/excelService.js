@@ -14,6 +14,8 @@ export const downloadClassExcel = async (classData) => {
       ['Kelas', classData.classLevel || 'N/A'],
       ['Program Keahlian', classData.programKeahlian || 'N/A'],
       ['Observer', classData.observerName || 'N/A'],
+      ['Peran Observer', classData.observerRole || 'N/A'],
+      ['Mitra Industri', formatMitraIndustri(classData.mitraIndustri)],
       [''],
       ['Alur Pembelajaran', 'Butir Observasi', ...Object.keys(classData.answers || {})]
     ];
@@ -69,6 +71,8 @@ export const downloadClassExcel = async (classData) => {
       ['Sekolah', classData.schoolName || 'N/A'],
       ['Program Keahlian', classData.programKeahlian || 'N/A'],
       ['Observer', classData.observerName || 'N/A'],
+      ['Peran Observer', classData.observerRole || 'N/A'],
+      ['Mitra Industri', formatMitraIndustri(classData.mitraIndustri)],
       ['Tanggal Assessment', formatDate(classData.assessmentDate)],
       ['Jumlah Siswa', Object.keys(classData.answers || {}).length],
       ['Jumlah Pertanyaan', sortedQuestions.length],
@@ -135,6 +139,48 @@ export const downloadClassExcel = async (classData) => {
     console.error('Error generating Excel file:', error);
     throw error;
   }
+};
+
+const extractMitraDisplayValue = (item) => {
+  if (item === null || item === undefined) return '';
+  if (typeof item === 'string') return item.trim();
+  if (typeof item === 'number') return item.toString();
+  if (typeof item === 'object') {
+    if (typeof item.name === 'string') return item.name;
+    if (typeof item.nama === 'string') return item.nama;
+    if (typeof item.company === 'string') return item.company;
+    if (typeof item.perusahaan === 'string') return item.perusahaan;
+
+    return Object.values(item)
+      .filter(value => typeof value === 'string' || typeof value === 'number')
+      .map(value => value.toString().trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return '';
+};
+
+const formatMitraIndustri = (mitra) => {
+  if (mitra === null || mitra === undefined) return 'N/A';
+
+  if (typeof mitra === 'string' || typeof mitra === 'number') {
+    const value = mitra.toString().trim();
+    return value || 'N/A';
+  }
+
+  if (Array.isArray(mitra)) {
+    const items = mitra
+      .map(extractMitraDisplayValue)
+      .filter(Boolean);
+    return items.length > 0 ? items.join(', ') : 'N/A';
+  }
+
+  if (typeof mitra === 'object') {
+    const value = extractMitraDisplayValue(mitra);
+    return value || 'N/A';
+  }
+
+  return 'N/A';
 };
 
 // Helper function to convert text answers to numeric values
