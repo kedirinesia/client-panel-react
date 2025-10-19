@@ -120,13 +120,15 @@ export const generateClassPDF = async (classData) => {
         // Add spider chart for student - centered and larger
         const studentSkillData = getStudentSkillData(answers);
         if (studentSkillData.length > 0) {
+          const chartHeight = 160;
+          const chartWidth = pageWidth - 40;
+          checkNewPage(chartHeight + 40);
+
           // Chart title
           yPosition = addText('SPIDER CHART KETERAMPILAN', 20, yPosition, pageWidth - 40, 18, 'bold');
           yPosition += 10;
           
           // Center the chart on the page
-          const chartWidth = pageWidth - 40;
-          const chartHeight = 120;
           const chartX = 20;
           const chartY = yPosition;
           
@@ -198,6 +200,57 @@ const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleDateString('id-ID');
 };
 
+const SKILL_ALIASES = {
+  'kerja sama': 'Kerja Sama',
+  'kerjasama': 'Kerja Sama',
+  'kolaborasi': 'Kerja Sama',
+  'tanggung jawab': 'Tanggung Jawab',
+  'komitmen': 'Tanggung Jawab',
+  'komunikasi': 'Komunikasi',
+  'problem solving': 'Problem Solving',
+  'problem-solving': 'Problem Solving',
+  'pemecahan masalah': 'Problem Solving',
+  'berpikir kritis': 'Problem Solving',
+  'kepemimpinan': 'Kepemimpinan',
+  'leadership': 'Kepemimpinan',
+  'fleksibilitas': 'Fleksibilitas',
+  'adaptasi': 'Fleksibilitas',
+  'adaptability': 'Fleksibilitas'
+};
+
+const normalizeSkillName = (name) => {
+  if (!name || typeof name !== 'string') return null;
+
+  const cleaned = name.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  if (!cleaned) return null;
+
+  const lower = cleaned.toLowerCase();
+  if (SKILL_ALIASES[lower]) {
+    return SKILL_ALIASES[lower];
+  }
+
+  if (lower.includes('problem')) {
+    return 'Problem Solving';
+  }
+  if (lower.includes('kerja') && lower.includes('sama')) {
+    return 'Kerja Sama';
+  }
+  if (lower.includes('tanggung')) {
+    return 'Tanggung Jawab';
+  }
+  if (lower.includes('komunik')) {
+    return 'Komunikasi';
+  }
+  if (lower.includes('pimpin') || lower.includes('leader')) {
+    return 'Kepemimpinan';
+  }
+  if (lower.includes('fleks') || lower.includes('adapt')) {
+    return 'Fleksibilitas';
+  }
+
+  return cleaned;
+};
+
 const getSkillCategories = (classData) => {
   const categories = {
     'Kerja Sama': [],
@@ -211,9 +264,10 @@ const getSkillCategories = (classData) => {
   if (classData.studentScores) {
     Object.values(classData.studentScores).forEach(student => {
       Object.entries(student).forEach(([key, score]) => {
-        const category = key.split('|')[1]?.split('(')[1]?.replace(')', '') || 'Other';
-        if (categories[category]) {
-          categories[category].push(score);
+        const rawCategory = key.split('|')[1]?.split('(')[1]?.replace(')', '') || key.split('|')[1] || '';
+        const normalized = normalizeSkillName(rawCategory);
+        if (normalized && categories[normalized]) {
+          categories[normalized].push(score);
         }
       });
     });
@@ -297,21 +351,26 @@ const getStudentSkillData = (answers) => {
     if (parts.length >= 2) {
       const skillPart = parts[1].trim();
       
-      let category = 'Other';
+      let category = '';
       const categoryMatch = skillPart.match(/\(([^)]+)\)/);
       if (categoryMatch) {
         category = categoryMatch[1];
       } else {
         category = skillPart;
       }
+
+      const normalizedCategory = normalizeSkillName(category);
+      if (!normalizedCategory) {
+        return;
+      }
       
-      if (!skillCategories[category]) {
-        skillCategories[category] = [];
+      if (!skillCategories[normalizedCategory]) {
+        skillCategories[normalizedCategory] = [];
       }
       
       const numericAnswer = normalizeAnswerToScore(answer);
       if (numericAnswer !== null) {
-        skillCategories[category].push(numericAnswer);
+        skillCategories[normalizedCategory].push(numericAnswer);
       }
     }
   });
@@ -429,7 +488,7 @@ const addSpiderChartToPDF = (pdf, chartData, x, y, width, height) => {
     // Chart dimensions - make it bigger and more visible
     const centerX = x + width / 2;
     const centerY = y + height / 2;
-    const radius = Math.min(width, height) / 2 - 15; // Reduced margin for bigger chart
+    const radius = Math.min(width, height) / 2 - 5; // Minimal margin for maximum chart size
     const maxValue = 4;
     const numSkills = chartData.length;
     const angleStep = (2 * Math.PI) / numSkills;
@@ -580,12 +639,15 @@ const captureSpiderChartFromWeb = async (chartData) => {
     chartContainer.style.position = 'absolute';
     chartContainer.style.left = '-9999px';
     chartContainer.style.top = '-9999px';
-    chartContainer.style.width = '600px';
-    chartContainer.style.height = '300px';
+    chartContainer.style.width = '640px';
+    chartContainer.style.height = '640px';
     chartContainer.style.backgroundColor = 'white';
-    chartContainer.style.padding = '20px';
-    chartContainer.style.border = '1px solid #e5e7eb';
-    chartContainer.style.borderRadius = '8px';
+    chartContainer.style.padding = '0';
+    chartContainer.style.border = 'none';
+    chartContainer.style.borderRadius = '0';
+    chartContainer.style.display = 'flex';
+    chartContainer.style.alignItems = 'center';
+    chartContainer.style.justifyContent = 'center';
     
     document.body.appendChild(chartContainer);
 
@@ -600,8 +662,8 @@ const captureSpiderChartFromWeb = async (chartData) => {
         acc[item.skill] = parseFloat(item.value);
         return acc;
       }, {}),
-      size: 560,
-      maxValue: 4
+      maxValue: 4,
+      height: 600
     });
 
     // Render the chart
@@ -616,8 +678,8 @@ const captureSpiderChartFromWeb = async (chartData) => {
       backgroundColor: 'white',
       scale: 2,
       useCORS: true,
-      width: 600,
-      height: 300
+      width: 640,
+      height: 640
     });
 
     const imageData = canvas.toDataURL('image/png');
@@ -639,11 +701,12 @@ const addSpiderChartImageToPDF = (pdf, imageData, x, y, width, height) => {
     if (!imageData) return;
     
     // Calculate image dimensions to fit the available space
-    const maxWidth = width;
-    const maxHeight = height;
+    const size = Math.min(width, height);
+    const offsetX = x + (width - size) / 2;
+    const offsetY = y + (height - size) / 2;
     
-    // Add image to PDF
-    pdf.addImage(imageData, 'PNG', x, y, maxWidth, maxHeight);
+    // Add image to PDF centered within the allocated box
+    pdf.addImage(imageData, 'PNG', offsetX, offsetY, size, size);
   } catch (error) {
     console.error('Error adding spider chart image to PDF:', error);
     // Fallback: add text

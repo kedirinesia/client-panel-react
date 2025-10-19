@@ -1,7 +1,7 @@
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
-const SpiderChart = ({ data, maxValue = 4 }) => {
+const SpiderChart = ({ data, maxValue = 4, height = 320 }) => {
   const chartData = [
     { skill: 'Kerja Sama', value: data['Kerja Sama'] || 0 },
     { skill: 'Tanggung Jawab', value: data['Tanggung Jawab'] || 0 },
@@ -12,7 +12,7 @@ const SpiderChart = ({ data, maxValue = 4 }) => {
   ];
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full" style={{ height: typeof height === 'number' ? `${height}px` : height }}>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={chartData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
           <PolarGrid stroke="#e5e7eb" />
@@ -42,4 +42,3 @@ const SpiderChart = ({ data, maxValue = 4 }) => {
 };
 
 export default SpiderChart;
-
